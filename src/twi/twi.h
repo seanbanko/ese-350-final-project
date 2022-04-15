@@ -1,6 +1,6 @@
 // TWI STATUS CODES
 #define TWI_START 0x08
-#define TWI_RESTART 0x10
+#define TWI_RSTART 0x10
 #define TWI_T_ADDR_ACK 0x18
 #define TWI_T_ADDR_NACK 0x20
 #define TWI_T_DATA_ACK 0x28
@@ -12,3 +12,5 @@
 #define TWI_R_DATA_NACK 0x58
 
 void twi_init();
+void twi_start();
+void twi_stop();

@@ -6,6 +6,7 @@
 
 #include "twi.h"
 
+// Initialize TWI
 void twi_init() {
   // Enable internal pull-up resistors for SCL and SDA
   PORTC &= (1 << PORTC4) | (1 << PORTC5);
@@ -13,3 +14,16 @@ void twi_init() {
   // SCL_freq = 16MHz/(16 + 2*12*1) = 400KHz	*/
   TWBR = 12;
 }
+
+// Send start (S) and wait for correct status
+void twi_start() {
+  TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
+  while ((TWSR & 0xF8) != TWI_START)
+    ;
+}
+
+// Send stop (P)
+void twi_stop() {
+  TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN);
+}
+
