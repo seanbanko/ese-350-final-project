@@ -1,4 +1,5 @@
 #include <avr/io.h>
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,7 +54,15 @@ int main(void) {
       sprintf(str, "data[%d]: %08d\n", i, data[i]);
       serialPrint(str);
     }
-    _delay_ms(500);
+    int accel_xout = (data[0] << 8) | data[1];
+    int accel_yout = (data[2] << 8) | data[3];
+    int accel_zout = (data[4] << 8) | data[5];
+    int roll =
+        (atan(accel_yout / sqrt(pow(accel_xout, 2) + pow(accel_zout, 2))) *
+         180 / M_PI);
+    int pitch =
+        (atan(-1 * accel_xout / sqrt(pow(accel_yout, 2) + pow(accel_zout, 2))) *
+         180 / M_PI);
   }
 }
 
