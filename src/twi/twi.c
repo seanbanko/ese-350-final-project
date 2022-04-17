@@ -21,11 +21,11 @@ void twi_init() {
 // Send start (S) and wait for correct status
 void twi_start() {
   TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
-  while ((TWSR & 0xF8) != TWI_START) {
-    sprintf(str2, "waiting after START\n");
-    serialPrint(str2);
-    sprintf(str2, "TWSR: %x\n", TWSR);
-    serialPrint(str2);
+  while (!(TWCR & (1 << TWINT))) {
+    // sprintf(str2, "waiting after START\n");
+    // serialPrint(str2);
+    // sprintf(str2, "TWSR: %x\n", TWSR);
+    // serialPrint(str2);
   }
 }
 
