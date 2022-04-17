@@ -7,7 +7,7 @@
 #include "twi.h"
 #include "../serial/serial.h"
 
-char str[30];
+char str2[30];
 
 // Initialize TWI
 void twi_init() {
@@ -15,17 +15,17 @@ void twi_init() {
   // PORTC &= (1 << PORTC4) | (1 << PORTC5);
   // TODO dont make this a magic number
   // SCL_freq = 16MHz/(16 + 2*12*1) = 400KHz	*/
-  TWBR = 12;
+  TWBR = 72;
 }
 
 // Send start (S) and wait for correct status
 void twi_start() {
   TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
   while ((TWSR & 0xF8) != TWI_START) {
-    sprintf(str, "waiting after START\n");
-    serialPrint(str);
-    sprintf(str, "TWSR: %x\n", TWSR);
-    serialPrint(str);
+    sprintf(str2, "waiting after START\n");
+    serialPrint(str2);
+    sprintf(str2, "TWSR: %x\n", TWSR);
+    serialPrint(str2);
   }
 }
 
