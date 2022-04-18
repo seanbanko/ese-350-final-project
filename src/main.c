@@ -34,40 +34,39 @@ int data[6];
 float acc_x;
 float acc_y;
 float acc_z;
+float pitch;
+float pitch_offset = 0;
 
 void read_accel();
 void clear_sleep_bit();
+
+void calibrate() {
+  acc_x = 0;
+  acc_y = 0;
+  acc_z = 0;
+  for (int i = 0; i < 100; i++) {
+    read_accel();
+    acc_x = ((data[0] << 8) | data[1]) / LSB_PER_G;
+    acc_y = ((data[2] << 8) | data[3]) / LSB_PER_G;
+    acc_z = ((data[4] << 8) | data[5]) / LSB_PER_G;
+    pitch += atan2(acc_x, sqrt(acc_y * acc_y + acc_z * acc_z)) * (180 / M_PI);
+  }
+  pitch_offset = pitch / 100.0;
+}
 
 int main(void) {
   serialInit(BAUD_PRESCALER);
   twi_init();
   clear_sleep_bit();
-
+  calibrate();
   while (1) {
     read_accel();
-    // for (int i = 0; i < 6; i++) {
-    //   sprintf(str, "data[%d]: %08d\n", i, data[i]);
-    //   serialPrint(str);
-    // }
-    int acc_x_raw = (data[0] << 8) | data[1];
-    int acc_y_raw = (data[2] << 8) | data[3];
-    int acc_z_raw = (data[4] << 8) | data[5];
-    float acc_x = acc_x_raw / LSB_PER_G;
-    float acc_y = acc_y_raw / LSB_PER_G;
-    float acc_z = acc_z_raw / LSB_PER_G;
-    // sprintf(str, "%f / ", acc_x);
-    // serialPrint(str);
-    // sprintf(str, "%f / ", acc_y);
-    // serialPrint(str);
-    // sprintf(str, "%f\n", acc_z);
-    // serialPrint(str);
-    float roll = atan2(acc_y, acc_z) * (180 / M_PI);
-    float pitch =
-        atan2(acc_x, sqrt(acc_y * acc_y + acc_z * acc_z)) * (180 / M_PI);
-    if (pitch > 10) {
-      sprintf(str, "PITCH: %f\n", pitch);
-      serialPrint(str);
-    }
+    acc_x = ((data[0] << 8) | data[1]) / LSB_PER_G;
+    acc_y = ((data[2] << 8) | data[3]) / LSB_PER_G;
+    acc_z = ((data[4] << 8) | data[5]) / LSB_PER_G;
+    pitch = atan2(acc_x, sqrt(acc_y * acc_y + acc_z * acc_z)) * (180 / M_PI) - pitch_offset;
+    sprintf(str, "pitch: %f\n", pitch);
+    serialPrint(str);
   }
 }
 
