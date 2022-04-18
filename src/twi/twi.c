@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <util/delay.h>
 
-#include "../serial/serial.h"
 #include "twi.h"
 
 // Initialize TWI (set bit rate)

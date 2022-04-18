@@ -38,36 +38,50 @@ float acc_z;
 float pitch;
 float pitch_offset = 0;
 
+float max_acc_z = -INFINITY;
+float min_acc_z = INFINITY;
+
 void mpu6050_read_accel();
 void mpu6050_init();
+void mpu6050_calibrate();
 
-void calibrate() {
-  acc_x = 0;
-  acc_y = 0;
-  acc_z = 0;
-  for (int i = 0; i < 100; i++) {
-    mpu6050_read_accel();
-    acc_x = ((data[0] << 8) | data[1]) / LSB_PER_G;
-    acc_y = ((data[2] << 8) | data[3]) / LSB_PER_G;
-    acc_z = ((data[4] << 8) | data[5]) / LSB_PER_G;
-    pitch += atan2(acc_x, sqrt(acc_y * acc_y + acc_z * acc_z)) * (180 / M_PI);
-  }
-  pitch_offset = pitch / 100.0;
-}
 
 int main(void) {
   serialInit(BAUD_PRESCALER);
   twi_init(TWI_BIT_RATE);
   mpu6050_init();
-  calibrate();
+  mpu6050_calibrate();
+  float acc_z_old;
   while (1) {
+    acc_z_old = acc_z;
     mpu6050_read_accel();
     acc_x = ((data[0] << 8) | data[1]) / LSB_PER_G;
     acc_y = ((data[2] << 8) | data[3]) / LSB_PER_G;
     acc_z = ((data[4] << 8) | data[5]) / LSB_PER_G;
     pitch = atan2(acc_x, sqrt(acc_y * acc_y + acc_z * acc_z)) * (180 / M_PI) - pitch_offset;
+    min_acc_z = fminf(acc_z, min_acc_z); 
+    max_acc_z = fmaxf(acc_z, max_acc_z); 
     sprintf(str, "pitch: %+4.2f\n", pitch);
     serialPrint(str);
+    // if (fabs(acc_z - acc_z_old) > 0.5) {
+    //   if (acc_z > acc_z_old) {
+    //     sprintf(str, "UP\n");
+    //     serialPrint(str);
+    //   } else {
+    //     sprintf(str, "DOWN\n");
+    //     serialPrint(str);
+    //   }
+    //   sprintf(str, "acc_z old: %+8.4f\n", acc_z_old);
+    //   serialPrint(str);
+    //   sprintf(str, "acc_z: %+8.4f\n", acc_z);
+    //   serialPrint(str);
+    //   sprintf(str, "min_acc_z: %+8.4f\n", min_acc_z);
+    //   serialPrint(str);
+    //   sprintf(str, "max_acc_z: %+8.4f\n", max_acc_z);
+    //   serialPrint(str);
+    // }
+    // sprintf(str, "acc_z: %+8.4f\n", acc_z);
+    // serialPrint(str);
   }
 }
 
@@ -77,6 +91,17 @@ void mpu6050_init() {
   twi_write(PWR_MGMT_1);
   twi_write(0x00);
   twi_stop();
+}
+
+void mpu6050_calibrate() {
+  for (int i = 0; i < 1000; i++) {
+    mpu6050_read_accel();
+    acc_x = ((data[0] << 8) | data[1]) / LSB_PER_G;
+    acc_y = ((data[2] << 8) | data[3]) / LSB_PER_G;
+    acc_z = ((data[4] << 8) | data[5]) / LSB_PER_G;
+    pitch += atan2(acc_x, sqrt(acc_y * acc_y + acc_z * acc_z)) * (180 / M_PI);
+  }
+  pitch_offset = pitch / 1000.0;
 }
 
 void mpu6050_read_accel() {
