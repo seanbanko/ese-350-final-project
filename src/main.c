@@ -12,7 +12,7 @@
 #define BAUD_RATE 9600
 #define BAUD_PRESCALER (((F_CPU / (BAUD_RATE * 16UL))) - 1)
 
-/* MPU6050 register addresses */
+// MPU6050 register addresses
 #define MPU6050_ADDR 0x68
 #define ACCEL_XOUT_H 0x3B
 #define ACCEL_XOUT_L 0x3C
@@ -25,13 +25,15 @@
 #define PWR_MGMT_1 0x6B
 #define WHO_AM_I 0x75
 
+// Calibration
+#define LSB_PER_G 16384.0
+
 char str[50];
 int data[6];
 
 float acc_x;
 float acc_y;
 float acc_z;
-float temp;
 
 void read_accel();
 void clear_sleep_bit();
@@ -39,14 +41,7 @@ void clear_sleep_bit();
 int main(void) {
   serialInit(BAUD_PRESCALER);
   twi_init();
-
-  sprintf(str, "initialization complete\n");
-  serialPrint(str);
-
   clear_sleep_bit();
-
-  sprintf(str, "cleared sleep bit\n");
-  serialPrint(str);
 
   while (1) {
     read_accel();
@@ -57,9 +52,9 @@ int main(void) {
     int acc_x_raw = (data[0] << 8) | data[1];
     int acc_y_raw = (data[2] << 8) | data[3];
     int acc_z_raw = (data[4] << 8) | data[5];
-    float acc_x = acc_x_raw / 16384.0;
-    float acc_y = acc_y_raw / 16384.0;
-    float acc_z = acc_z_raw / 16384.0;
+    float acc_x = acc_x_raw / LSB_PER_G;
+    float acc_y = acc_y_raw / LSB_PER_G;
+    float acc_z = acc_z_raw / LSB_PER_G;
     // sprintf(str, "%f / ", acc_x);
     // serialPrint(str);
     // sprintf(str, "%f / ", acc_y);
@@ -69,14 +64,10 @@ int main(void) {
     float roll = atan2(acc_y, acc_z) * (180 / M_PI);
     float pitch =
         atan2(acc_x, sqrt(acc_y * acc_y + acc_z * acc_z)) * (180 / M_PI);
-    // float roll = atan2(acc_y, acc_z) * (180 / M_PI);
-    // float pitch = atan2(acc_x, sqrt(pow(acc_y, 2) + pow(acc_z, 2))) * (180 /
-    // M_PI);
-
-    sprintf(str, "%f / ", roll);
-    serialPrint(str);
-    sprintf(str, "%f\n", pitch);
-    serialPrint(str);
+    if (pitch > 10) {
+      sprintf(str, "PITCH: %f\n", pitch);
+      serialPrint(str);
+    }
   }
 }
 
@@ -136,6 +127,5 @@ void read_accel() {
     ;
   // Store DATA
   data[i] = TWDR;
-
   twi_stop();
 }
