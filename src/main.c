@@ -33,7 +33,7 @@ float acc_y;
 float acc_z;
 float temp;
 
-void single_read_sequence();
+void read_accel();
 void clear_sleep_bit();
 
 int main(void) {
@@ -49,20 +49,34 @@ int main(void) {
   serialPrint(str);
 
   while (1) {
-    single_read_sequence();
-    for (int i = 0; i < 6; i++) {
-      sprintf(str, "data[%d]: %08d\n", i, data[i]);
-      serialPrint(str);
-    }
-    int accel_xout = (data[0] << 8) | data[1];
-    int accel_yout = (data[2] << 8) | data[3];
-    int accel_zout = (data[4] << 8) | data[5];
-    int roll =
-        (atan(accel_yout / sqrt(pow(accel_xout, 2) + pow(accel_zout, 2))) *
-         180 / M_PI);
-    int pitch =
-        (atan(-1 * accel_xout / sqrt(pow(accel_yout, 2) + pow(accel_zout, 2))) *
-         180 / M_PI);
+    read_accel();
+    // for (int i = 0; i < 6; i++) {
+    //   sprintf(str, "data[%d]: %08d\n", i, data[i]);
+    //   serialPrint(str);
+    // }
+    int acc_x_raw = (data[0] << 8) | data[1];
+    int acc_y_raw = (data[2] << 8) | data[3];
+    int acc_z_raw = (data[4] << 8) | data[5];
+    float acc_x = acc_x_raw / 16384.0;
+    float acc_y = acc_y_raw / 16384.0;
+    float acc_z = acc_z_raw / 16384.0;
+    // sprintf(str, "%f / ", acc_x);
+    // serialPrint(str);
+    // sprintf(str, "%f / ", acc_y);
+    // serialPrint(str);
+    // sprintf(str, "%f\n", acc_z);
+    // serialPrint(str);
+    float roll = atan2(acc_y, acc_z) * (180 / M_PI);
+    float pitch =
+        atan2(acc_x, sqrt(acc_y * acc_y + acc_z * acc_z)) * (180 / M_PI);
+    // float roll = atan2(acc_y, acc_z) * (180 / M_PI);
+    // float pitch = atan2(acc_x, sqrt(pow(acc_y, 2) + pow(acc_z, 2))) * (180 /
+    // M_PI);
+
+    sprintf(str, "%f / ", roll);
+    serialPrint(str);
+    sprintf(str, "%f\n", pitch);
+    serialPrint(str);
   }
 }
 
@@ -71,92 +85,55 @@ void clear_sleep_bit() {
   // Send device address and write bit (SLA+W) and wait for ACK
   TWDR = (MPU6050_ADDR << 1) | 0;
   TWCR = (1 << TWINT) | (1 << TWEN);
-  while (!(TWCR & (1 << TWINT))) {
-    // sprintf(str, "waiting after SLA+W\n");
-    // serialPrint(str);
-    // sprintf(str, "TWSR: %x\n", TWSR);
-    // serialPrint(str);
-  }
+  while (!(TWCR & (1 << TWINT)))
+    ;
   // Send register address (RA) and wait for ACK
   TWDR = PWR_MGMT_1;
   TWCR = (1 << TWINT) | (1 << TWEN);
-  while (!(TWCR & (1 << TWINT))) {
-    // sprintf(str, "waiting after RA\n");
-    // serialPrint(str);
-    // sprintf(str, "TWSR: %x\n", TWSR);
-    // serialPrint(str);
-  }
+  while (!(TWCR & (1 << TWINT)))
+    ;
   // Send DATA and wait for ACK
   TWDR = 0x00;
   TWCR = (1 << TWINT) | (1 << TWEN);
-  while (!(TWCR & (1 << TWINT))) {
-    // sprintf(str, "waiting after DATA\n");
-    // serialPrint(str);
-    // sprintf(str, "TWSR: %x\n", TWSR);
-    // serialPrint(str);
-  }
+  while (!(TWCR & (1 << TWINT)))
+    ;
   twi_stop();
-  _delay_ms(5);
 }
 
-void single_read_sequence() {
+void read_accel() {
   twi_start();
   // Send device address and write bit (SLA+W) and wait for ACK
   TWDR = (MPU6050_ADDR << 1) | 0;
   TWCR = (1 << TWINT) | (1 << TWEN);
-  while (!(TWCR & (1 << TWINT))) {
-    // sprintf(str, "waiting after SLA+W\n");
-    // serialPrint(str);
-    // sprintf(str, "TWSR: %x\n", TWSR);
-    // serialPrint(str);
-  }
+  while (!(TWCR & (1 << TWINT)))
+    ;
   // Send register address (RA) and wait for ACK
   TWDR = ACCEL_XOUT_H;
   TWCR = (1 << TWINT) | (1 << TWEN);
-  while (!(TWCR & (1 << TWINT))) {
-    // sprintf(str, "waiting after RA\n");
-    // serialPrint(str);
-    // sprintf(str, "TWSR: %x\n", TWSR);
-    // serialPrint(str);
-  }
+  while (!(TWCR & (1 << TWINT)))
+    ;
   // Send repeated start (RS) and wait for ACK
   TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
-  while (!(TWCR & (1 << TWINT))) {
-    // sprintf(str, "waiting after RS\n");
-    // serialPrint(str);
-    // sprintf(str, "TWSR: %x\n", TWSR);
-    // serialPrint(str);
-  }
+  while (!(TWCR & (1 << TWINT)))
+    ;
   // Send device address and read bit (SLA+R) and wait for ACK + DATA
   TWDR = (MPU6050_ADDR << 1) | 1;
   TWCR = (1 << TWINT) | (1 << TWEN);
-  while (!(TWCR & (1 << TWINT))) {
-    // sprintf(str, "waiting after SLA+R\n");
-    // serialPrint(str);
-    // sprintf(str, "TWSR: %x\n", TWSR);
-    // serialPrint(str);
-  }
+  while (!(TWCR & (1 << TWINT)))
+    ;
   int i;
   for (i = 0; i < 5; i++) {
     // Send ACK
     TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWEA);
-    while (!(TWCR & (1 << TWINT))) {
-      // sprintf(str, "waiting after ACK\n");
-      // serialPrint(str);
-      // sprintf(str, "TWSR: %x\n", TWSR);
-      // serialPrint(str);
-    }
+    while (!(TWCR & (1 << TWINT)))
+      ;
     // Store DATA
     data[i] = TWDR;
   }
   // Send NACK
   TWCR = (1 << TWINT) | (1 << TWEN);
-  while (!(TWCR & (1 << TWINT))) {
-    // sprintf(str, "waiting after NACK\n");
-    // serialPrint(str);
-    // sprintf(str, "TWSR: %x\n", TWSR);
-    // serialPrint(str);
-  }
+  while (!(TWCR & (1 << TWINT)))
+    ;
   // Store DATA
   data[i] = TWDR;
 

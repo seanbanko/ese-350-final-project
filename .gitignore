@@ -4,7 +4,6 @@ screenshots/*
 include/*
 lib/*
 test/
-platformio.ini
 
 # Atmel Studio Files
 *.atsln
