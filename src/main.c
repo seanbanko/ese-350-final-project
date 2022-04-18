@@ -24,9 +24,10 @@
 #define TEMP_OUT_L 0x42
 #define PWR_MGMT_1 0x6B
 #define WHO_AM_I 0x75
-
-// Calibration
 #define LSB_PER_G 16384.0
+
+// TWI
+#define TWI_BIT_RATE 72
 
 char str[50];
 int data[6];
@@ -37,15 +38,15 @@ float acc_z;
 float pitch;
 float pitch_offset = 0;
 
-void read_accel();
-void clear_sleep_bit();
+void mpu6050_read_accel();
+void mpu6050_init();
 
 void calibrate() {
   acc_x = 0;
   acc_y = 0;
   acc_z = 0;
   for (int i = 0; i < 100; i++) {
-    read_accel();
+    mpu6050_read_accel();
     acc_x = ((data[0] << 8) | data[1]) / LSB_PER_G;
     acc_y = ((data[2] << 8) | data[3]) / LSB_PER_G;
     acc_z = ((data[4] << 8) | data[5]) / LSB_PER_G;
@@ -56,75 +57,44 @@ void calibrate() {
 
 int main(void) {
   serialInit(BAUD_PRESCALER);
-  twi_init();
-  clear_sleep_bit();
+  twi_init(TWI_BIT_RATE);
+  mpu6050_init();
   calibrate();
   while (1) {
-    read_accel();
+    mpu6050_read_accel();
     acc_x = ((data[0] << 8) | data[1]) / LSB_PER_G;
     acc_y = ((data[2] << 8) | data[3]) / LSB_PER_G;
     acc_z = ((data[4] << 8) | data[5]) / LSB_PER_G;
     pitch = atan2(acc_x, sqrt(acc_y * acc_y + acc_z * acc_z)) * (180 / M_PI) - pitch_offset;
-    sprintf(str, "pitch: %f\n", pitch);
+    sprintf(str, "pitch: %+4.2f\n", pitch);
     serialPrint(str);
   }
 }
 
-void clear_sleep_bit() {
+void mpu6050_init() {
   twi_start();
-  // Send device address and write bit (SLA+W) and wait for ACK
-  TWDR = (MPU6050_ADDR << 1) | 0;
-  TWCR = (1 << TWINT) | (1 << TWEN);
-  while (!(TWCR & (1 << TWINT)))
-    ;
-  // Send register address (RA) and wait for ACK
-  TWDR = PWR_MGMT_1;
-  TWCR = (1 << TWINT) | (1 << TWEN);
-  while (!(TWCR & (1 << TWINT)))
-    ;
-  // Send DATA and wait for ACK
-  TWDR = 0x00;
-  TWCR = (1 << TWINT) | (1 << TWEN);
-  while (!(TWCR & (1 << TWINT)))
-    ;
+  twi_write((MPU6050_ADDR << 1) | 0);
+  twi_write(PWR_MGMT_1);
+  twi_write(0x00);
   twi_stop();
 }
 
-void read_accel() {
+void mpu6050_read_accel() {
   twi_start();
   // Send device address and write bit (SLA+W) and wait for ACK
-  TWDR = (MPU6050_ADDR << 1) | 0;
-  TWCR = (1 << TWINT) | (1 << TWEN);
-  while (!(TWCR & (1 << TWINT)))
-    ;
+  twi_write((MPU6050_ADDR << 1) | 0);
   // Send register address (RA) and wait for ACK
-  TWDR = ACCEL_XOUT_H;
-  TWCR = (1 << TWINT) | (1 << TWEN);
-  while (!(TWCR & (1 << TWINT)))
-    ;
+  twi_write(ACCEL_XOUT_H);
   // Send repeated start (RS) and wait for ACK
-  TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
-  while (!(TWCR & (1 << TWINT)))
-    ;
+  twi_repeated_start();
   // Send device address and read bit (SLA+R) and wait for ACK + DATA
-  TWDR = (MPU6050_ADDR << 1) | 1;
-  TWCR = (1 << TWINT) | (1 << TWEN);
-  while (!(TWCR & (1 << TWINT)))
-    ;
-  int i;
+  twi_write((MPU6050_ADDR << 1) | 1);
+  int i = 0;
   for (i = 0; i < 5; i++) {
-    // Send ACK
-    TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWEA);
-    while (!(TWCR & (1 << TWINT)))
-      ;
-    // Store DATA
+    twi_ack();
     data[i] = TWDR;
   }
-  // Send NACK
-  TWCR = (1 << TWINT) | (1 << TWEN);
-  while (!(TWCR & (1 << TWINT)))
-    ;
-  // Store DATA
+  twi_nack();
   data[i] = TWDR;
   twi_stop();
 }

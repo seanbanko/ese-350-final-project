@@ -4,29 +4,50 @@
 #include <stdlib.h>
 #include <util/delay.h>
 
-#include "twi.h"
 #include "../serial/serial.h"
+#include "twi.h"
 
-char str2[30];
-
-// Initialize TWI
-void twi_init() {
-  // Enable internal pull-up resistors for SCL and SDA
-  // PORTC |= (1 << PORTC4) | (1 << PORTC5);
-  // TODO dont make this a magic number
-  // SCL_freq = 16MHz/(16 + 2*12*1) = 400KHz	*/
-  TWBR = 72;
+// Initialize TWI (set bit rate)
+void twi_init(unsigned char bit_rate) {
+  TWBR = bit_rate;
 }
 
-// Send start (S) and wait for correct status
+// Send start (S) and wait
 void twi_start() {
   TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
-  while (!(TWCR & (1 << TWINT))) {
-    // sprintf(str2, "waiting after START\n");
-    // serialPrint(str2);
-    // sprintf(str2, "TWSR: %x\n", TWSR);
-    // serialPrint(str2);
-  }
+  while (!(TWCR & (1 << TWINT)))
+    ;
+}
+
+// Send byte
+void twi_write(unsigned char byte) {
+  TWDR = byte;
+  TWCR = (1 << TWINT) | (1 << TWEN);
+  while (!(TWCR & (1 << TWINT)))
+    ;
+}
+
+// Send repeated start (RS) and wait
+void twi_repeated_start() {
+  TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
+  while (!(TWCR & (1 << TWINT)))
+    ;
+}
+
+// Send ACK (after reading a byte)
+void twi_ack() {
+  // Send ACK
+  TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWEA);
+  while (!(TWCR & (1 << TWINT)))
+    ;
+}
+
+// Send NACK (after reading a byte)
+void twi_nack() {
+  // Send ACK
+  TWCR = (1 << TWINT) | (1 << TWEN);
+  while (!(TWCR & (1 << TWINT)))
+    ;
 }
 
 // Send stop (P)

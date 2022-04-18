@@ -11,6 +11,10 @@
 #define TWI_R_DATA_ACK 0x50
 #define TWI_R_DATA_NACK 0x58
 
-void twi_init();
+void twi_init(unsigned char bit_rate);
 void twi_start();
+void twi_write(unsigned char byte);
+void twi_repeated_start();
+void twi_ack();
+void twi_nack();
 void twi_stop();
