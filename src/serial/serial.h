@@ -1,7 +1,7 @@
 #pragma once
 
-void serialInit(int prescaler);
+void serial_init(int prescaler);
 
-void serialSend(unsigned char data);
+void serial_send(unsigned char data);
 
-void serialPrint(char *str);
+void serial_print(char *str);

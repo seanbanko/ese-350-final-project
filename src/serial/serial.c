@@ -1,7 +1,7 @@
 #include "serial.h"
 #include <avr/io.h>
 
-void serialInit(int BAUD_PRESCALER) {
+void serial_init(int BAUD_PRESCALER) {
   // Set baud rate
   UBRR0H = (unsigned char)(BAUD_PRESCALER >> 8);
   UBRR0L = (unsigned char)BAUD_PRESCALER;
@@ -12,7 +12,7 @@ void serialInit(int BAUD_PRESCALER) {
   UCSR0C |= (1 << USBS0);                 // 2 stop bits
 }
 
-void serialSend(unsigned char data) {
+void serial_send(unsigned char data) {
   // Wait for empty transmit buffer
   while (!(UCSR0A & (1 << UDRE0)))
     ;
@@ -20,9 +20,9 @@ void serialSend(unsigned char data) {
   UDR0 = data;
 }
 
-void serialPrint(char *str) {
+void serial_print(char *str) {
   while (*str) {
-    serialSend(*str);
+    serial_send(*str);
     str++;
   }
 }

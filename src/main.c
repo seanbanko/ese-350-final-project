@@ -45,9 +45,8 @@ void mpu6050_read_accel();
 void mpu6050_init();
 void mpu6050_calibrate();
 
-
 int main(void) {
-  serialInit(BAUD_PRESCALER);
+  serial_init(BAUD_PRESCALER);
   twi_init(TWI_BIT_RATE);
   mpu6050_init();
   mpu6050_calibrate();
@@ -59,10 +58,13 @@ int main(void) {
     acc_y = ((data[2] << 8) | data[3]) / LSB_PER_G;
     acc_z = ((data[4] << 8) | data[5]) / LSB_PER_G;
     pitch = atan2(acc_x, sqrt(acc_y * acc_y + acc_z * acc_z)) * (180 / M_PI) - pitch_offset;
-    min_acc_z = fminf(acc_z, min_acc_z); 
-    max_acc_z = fmaxf(acc_z, max_acc_z); 
-    sprintf(str, "pitch: %+4.2f\n", pitch);
-    serialPrint(str);
+    min_acc_z = fminf(acc_z, min_acc_z);
+    max_acc_z = fmaxf(acc_z, max_acc_z);
+
+    // Sends data to NodeMCU
+    // serial_send(0x41);
+
+    // Code for trying to detect reps
     // if (fabs(acc_z - acc_z_old) > 0.5) {
     //   if (acc_z > acc_z_old) {
     //     sprintf(str, "UP\n");
@@ -71,17 +73,7 @@ int main(void) {
     //     sprintf(str, "DOWN\n");
     //     serialPrint(str);
     //   }
-    //   sprintf(str, "acc_z old: %+8.4f\n", acc_z_old);
-    //   serialPrint(str);
-    //   sprintf(str, "acc_z: %+8.4f\n", acc_z);
-    //   serialPrint(str);
-    //   sprintf(str, "min_acc_z: %+8.4f\n", min_acc_z);
-    //   serialPrint(str);
-    //   sprintf(str, "max_acc_z: %+8.4f\n", max_acc_z);
-    //   serialPrint(str);
     // }
-    // sprintf(str, "acc_z: %+8.4f\n", acc_z);
-    // serialPrint(str);
   }
 }
 
