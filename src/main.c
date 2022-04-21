@@ -1,4 +1,5 @@
 #include <avr/io.h>
+#include <avr/interrupt.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -29,8 +30,10 @@
 // TWI
 #define TWI_BIT_RATE 72
 
-// MISC
-#define PITCH_THRESHOLD 5 
+// Buzzer
+#define PITCH_THRESHOLD 5
+#define COUNT_2500HZ 199
+#define DUTY_CYCLE 0.1
 
 char str[50];
 int data[6];
@@ -45,15 +48,22 @@ float pitch_acc = 0;
 float max_acc_z = -INFINITY;
 float min_acc_z = INFINITY;
 
+int timer2Periods = 0;
+
 void mpu6050_read_accel();
 void mpu6050_init();
 void mpu6050_calibrate();
+
+void buzzer_init();
+void buzzer_enable();
+void buzzer_disable();
 
 int main(void) {
   serial_init(BAUD_PRESCALER);
   twi_init(TWI_BIT_RATE);
   mpu6050_init();
   mpu6050_calibrate();
+  buzzer_init();
   // float acc_z_old;
   while (1) {
     // acc_z_old = acc_z;
@@ -61,13 +71,14 @@ int main(void) {
     acc_x = ((data[0] << 8) | data[1]) / LSB_PER_G;
     acc_y = ((data[2] << 8) | data[3]) / LSB_PER_G;
     acc_z = ((data[4] << 8) | data[5]) / LSB_PER_G;
-    pitch = atan2(acc_x, sqrt(acc_y * acc_y + acc_z * acc_z)) * (180 / M_PI) - pitch_offset;
+    pitch = atan2(acc_x, sqrt(acc_y * acc_y + acc_z * acc_z)) * (180 / M_PI) -
+            pitch_offset;
     pitch_acc += pitch;
     min_acc_z = fminf(acc_z, min_acc_z);
     max_acc_z = fmaxf(acc_z, max_acc_z);
 
     if (fabs(pitch) > PITCH_THRESHOLD) {
-      // TODO Buzzer
+      buzzer_enable();
     }
 
     // Sends data to NodeMCU
@@ -126,4 +137,40 @@ void mpu6050_read_accel() {
   twi_nack();
   data[i] = TWDR;
   twi_stop();
+}
+
+void buzzer_init() {
+  // Sets PD3 as output
+  DDRD |= (1 << DDD3);
+  // Prescales Timer 2 by 32
+  TCCR2B |= (1 << CS20);
+  TCCR2B |= (1 << CS21);
+  // Sets Timer 2 mode to Fast PWM
+  TCCR2A |= (1 << WGM20);
+  TCCR2A |= (1 << WGM21);
+  TCCR2B |= (1 << WGM22);
+  // Sets Timer 2 Output Compare Register 2A for 2.5 kHz
+  OCR2A = COUNT_2500HZ;
+  // Sets Timer 2 Output Compare Register 2B for 5% duty cycle
+  OCR2B = DUTY_CYCLE * OCR2A;
+  TIMSK2 |= (1 << OCIE2A);
+}
+
+void buzzer_enable() {
+  timer2Periods = 0;
+  // Sets Timer 2 to clear 0C2B on Compare Match B, reset at bottom
+  TCCR2A |= (1 << COM2B1);
+}
+
+void buzzer_disable() {
+  // Sets Timer 2 disable action of OC2B
+  TCCR2A &= ~(1 << COM2B1);
+  PORTD &= ~(1 << PORTD3);
+}
+
+ISR(TIMER2_COMPA_vect) {
+  if (++timer2Periods > 500) {
+    buzzer_disable();
+    timer2Periods = 0;
+  }
 }
