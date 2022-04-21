@@ -31,7 +31,7 @@
 #define TWI_BIT_RATE 72
 
 // Buzzer
-#define PITCH_THRESHOLD 5
+#define PITCH_THRESHOLD 8
 #define COUNT_2500HZ 199
 #define DUTY_CYCLE 0.1
 
