@@ -58,12 +58,17 @@ void buzzer_init();
 void buzzer_enable();
 void buzzer_disable();
 
-int main(void) {
+void init() {
+  cli();
   serial_init(BAUD_PRESCALER);
   twi_init(TWI_BIT_RATE);
   mpu6050_init();
   mpu6050_calibrate();
   buzzer_init();
+  sei();
+}
+
+int main(void) {
   // float acc_z_old;
   while (1) {
     // acc_z_old = acc_z;
@@ -84,17 +89,6 @@ int main(void) {
     // Sends data to NodeMCU
     int16_t i = pitch;
     serial_send_i16(i);
-
-    // Code for trying to detect reps
-    // if (fabs(acc_z - acc_z_old) > 0.5) {
-    //   if (acc_z > acc_z_old) {
-    //     sprintf(str, "UP\n");
-    //     serialPrint(str);
-    //   } else {
-    //     sprintf(str, "DOWN\n");
-    //     serialPrint(str);
-    //   }
-    // }
 
     _delay_ms(100);
   }
@@ -169,7 +163,7 @@ void buzzer_disable() {
 }
 
 ISR(TIMER2_COMPA_vect) {
-  if (++timer2Periods > 500) {
+  if (++timer2Periods > 200) {
     buzzer_disable();
     timer2Periods = 0;
   }
