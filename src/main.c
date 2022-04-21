@@ -29,6 +29,9 @@
 // TWI
 #define TWI_BIT_RATE 72
 
+// MISC
+#define PITCH_THRESHOLD 5 
+
 char str[50];
 int data[6];
 
@@ -38,6 +41,7 @@ float acc_z;
 float pitch;
 float pitch_offset = 0;
 
+float pitch_acc = 0;
 float max_acc_z = -INFINITY;
 float min_acc_z = INFINITY;
 
@@ -50,19 +54,25 @@ int main(void) {
   twi_init(TWI_BIT_RATE);
   mpu6050_init();
   mpu6050_calibrate();
-  float acc_z_old;
+  // float acc_z_old;
   while (1) {
-    acc_z_old = acc_z;
+    // acc_z_old = acc_z;
     mpu6050_read_accel();
     acc_x = ((data[0] << 8) | data[1]) / LSB_PER_G;
     acc_y = ((data[2] << 8) | data[3]) / LSB_PER_G;
     acc_z = ((data[4] << 8) | data[5]) / LSB_PER_G;
     pitch = atan2(acc_x, sqrt(acc_y * acc_y + acc_z * acc_z)) * (180 / M_PI) - pitch_offset;
+    pitch_acc += pitch;
     min_acc_z = fminf(acc_z, min_acc_z);
     max_acc_z = fmaxf(acc_z, max_acc_z);
 
+    if (fabs(pitch) > PITCH_THRESHOLD) {
+      // TODO Buzzer
+    }
+
     // Sends data to NodeMCU
-    // serial_send(0x41);
+    int16_t i = pitch;
+    serial_send_i16(i);
 
     // Code for trying to detect reps
     // if (fabs(acc_z - acc_z_old) > 0.5) {
@@ -74,6 +84,8 @@ int main(void) {
     //     serialPrint(str);
     //   }
     // }
+
+    _delay_ms(100);
   }
 }
 
