@@ -69,6 +69,7 @@ void init() {
 }
 
 int main(void) {
+  init();
   // float acc_z_old;
   while (1) {
     // acc_z_old = acc_z;
