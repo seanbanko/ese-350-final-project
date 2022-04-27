@@ -2,7 +2,7 @@
 
 ## DevPost and Links
 
-See our DevPost [here][https://devpost.com/software/squat-support] and checkout our YouTube video [here][https://urldefense.com/v3/__https://www.youtube.com/watch?v=DHqvz-y0gxQ__;!!IBzWLUs!SMsAatfbAjFeWANAP97uEC9RmyY04_OxHeGKsir70sWGwWuoxGzvDhCCM_AKMuogv5P7Sa_hxHmNsP6iVYC6tVAO$]
+Check out our [DevPost](https://devpost.com/software/squat-support) and our [YouTube video](https://urldefense.com/v3/__https://www.youtube.com/watch?v=DHqvz-y0gxQ__;!!IBzWLUs!SMsAatfbAjFeWANAP97uEC9RmyY04_OxHeGKsir70sWGwWuoxGzvDhCCM_AKMuogv5P7Sa_hxHmNsP6iVYC6tVAO$)
 
 ## How to Compile and Run this Code:
 
